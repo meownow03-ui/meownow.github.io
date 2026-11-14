@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divine World</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Игровое поле -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Окно диалога -->
+        <div id="dialogue-box">
+            <div class="portrait-placeholder"></div>
+            <div class="text-content">
+                <div class="name" id="npc-name">Страж Врат</div>
+                <div class="text" id="npc-text">Приветствую тебя...</div>
+            </div>
+        </div>
+
+        <!-- Кнопки выбора в диалоге -->
+        <div id="dialogue-choices"></div>
+
+        <!-- ГЛАВНОЕ МЕНЮ -->
+        <div id="main-menu" class="ui-overlay">
+            <h1 class="game-title">DIVINE WORLD</h1>
+            <div class="menu-buttons">
+                <button id="btn-start">Начать путь</button>
+                <button id="btn-exit">Выйти</button>
+            </div>
+        </div>
+
+        <!-- МЕНЮ ПАУЗЫ -->
+        <div id="pause-menu" class="ui-overlay" style="display: none;">
+            <h2 class="menu-title">ПАУЗА</h2>
+            <div class="menu-buttons">
+                <button id="btn-resume">Продолжить</button>
+                <button id="btn-to-main">В главное меню</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js" defer></script>
+</body>
+</html>
