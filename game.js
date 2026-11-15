@@ -1,6 +1,3 @@
-// ==========================================
-// НАСТРОЙКИ ИГРЫ
-// ==========================================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -8,115 +5,188 @@ canvas.width = 1920;
 canvas.height = 1080;
 ctx.imageSmoothingEnabled = false;
 
-const colors = { bg: '#1a0b2e', npc: '#ff66cc' };
-
-// СОСТОЯНИЕ ИГРЫ: "MENU", "PLAYING", "PAUSED"
 let gameState = "MENU";
 let keys = {};
 let showDialogue = false;
 
+const colors = { bg: '#1a0b2e', npc: '#ff66cc' };
+
 // ==========================================
-// ЗАГРУЗКА КАРТИНОК
+// 1. СИСТЕМА СЦЕН (ЛОКАЦИЙ)
+// ==========================================
+const scenes = {
+    "midgard": {
+        bgSrc: 'assets/BACKGROUND.png',
+        hasNpc: true,
+        npcName: "Страж Врат",
+        npcWorldX: 0.7,
+        npcWorldY: 0.3,
+        dialogueTree: {
+            start: {
+                text: "Приветствую тебя в Мидгарде, полубогиня. Асгард ждал твоего возвращения.",
+                choices: [
+                    { text: "Кто ты такой?", next: "who" },
+                    { text: "Я ухожу. (Закрыть)", action: "close" }
+                ]
+            },
+            who: {
+                text: "Я — Страж Врат, последний из древнего рода.",
+                choices: [{ text: "Понятно.", next: "start" }]
+            }
+        }
+    },
+    "asgard": {
+        bgSrc: 'assets/ASGARD.png', // Твоя новая картинка
+        hasNpc: false, // В Асгарде пока нет NPC
+        npcName: "",
+        npcWorldX: 0,
+        npcWorldY: 0,
+        dialogueTree: {} // Пустой диалог
+    }
+};
+
+let currentScene = "midgard"; // С какой локации начинаем
+
+// ==========================================
+// ЗАГРУЗКА РЕСУРСОВ
 // ==========================================
 const heroImage = new Image();
 heroImage.src = 'assets/hero.png';
-const bgImage = new Image();
-bgImage.src = 'assets/BACKGROUND.png';
+const bgImage = new Image(); // Сюда будет грузиться фон текущей сцены
 
 // ==========================================
-// НАСТРОЙКИ ПЕРСПЕКТИВЫ
+// АДАПТИВНАЯ МАТЕМАТИКА
 // ==========================================
-const FLOOR_TOP_Y = 500;
-const FLOOR_BOTTOM_Y = 1040;
-const FLOOR_TOP_WIDTH = 1440;
-const FLOOR_BOTTOM_WIDTH = 1920;
+const RATIO_FLOOR_TOP_Y = 500 / 1080;
+const RATIO_FLOOR_BOTTOM_Y = 1040 / 1080;
+const RATIO_FLOOR_TOP_W = 1440 / 1920;
+const RATIO_FLOOR_BOTTOM_W = 1.0;
 
-// ==========================================
-// ИГРОВЫЕ ОБЪЕКТЫ
-// ==========================================
 const player = {
     worldX: 0.5, worldY: 0.5, w: 80, h: 80, speed: 0.006,
     direction: 'down', frame: 1, animTimer: 0, screenX: 0, screenY: 0, scale: 1
 };
 
-function updatePlayerPosition() {
-    player.screenY = FLOOR_TOP_Y + (FLOOR_BOTTOM_Y - FLOOR_TOP_Y) * player.worldY;
-    let currentWidth = FLOOR_TOP_WIDTH + (FLOOR_BOTTOM_WIDTH - FLOOR_TOP_WIDTH) * player.worldY;
-    player.screenX = (canvas.width / 2) - (currentWidth / 2) + (currentWidth * player.worldX);
-    player.scale = 0.5 + (0.7 * player.worldY);
-}
-
 const npc = {
-    worldX: 0.7, worldY: 0.3, w: 80, h: 80, color: colors.npc, name: "Страж Врат",
-    screenX: 0, screenY: 0, scale: 1,
-    dialogueTree: {
-        start: {
-            text: "Приветствую тебя, полубогиня. Асгард ждал твоего возвращения. Игдрасиль в опасности...",
-            choices: [
-                { text: "Кто ты такой?", next: "who" },
-                { text: "Что случилось с Игдрасилем?", next: "tree" },
-                { text: "Я ухожу. (Закрыть)", action: "close" }
-            ]
-        },
-        who: {
-            text: "Я — Страж Врат, последний из древнего рода. Я охраняю вход в этот зал уже тысячу лет.",
-            choices: [
-                { text: "Понятно. Что мне делать?", next: "start" },
-                { text: "Я ухожу. (Закрыть)", action: "close" }
-            ]
-        },
-        tree: {
-            text: "Тьма поглощает корни Древа. Если мы не остановим это, все девять миров падут.",
-            choices: [
-                { text: "Как мне помочь?", next: "start" },
-                { text: "Я ухожу. (Закрыть)", action: "close" }
-            ]
-        }
-    }
+    worldX: 0, worldY: 0, w: 80, h: 80, color: colors.npc, name: "",
+    screenX: 0, screenY: 0, scale: 1, dialogueTree: {}
 };
-
-function updateNpcPosition() {
-    npc.screenY = FLOOR_TOP_Y + (FLOOR_BOTTOM_Y - FLOOR_TOP_Y) * npc.worldY;
-    let currentWidth = FLOOR_TOP_WIDTH + (FLOOR_BOTTOM_WIDTH - FLOOR_TOP_WIDTH) * npc.worldY;
-    npc.screenX = (canvas.width / 2) - (currentWidth / 2) + (currentWidth * npc.worldX);
-    npc.scale = 0.5 + (0.7 * npc.worldY);
-}
 
 let entities = [player, npc];
 
 // ==========================================
-// СИСТЕМА МЕНЮ (КНОПКИ)
+// ФУНКЦИЯ ЗАГРУЗКИ СЦЕНЫ
 // ==========================================
-function showMenu(menuId) {
-    document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('pause-menu').style.display = 'none';
+function loadScene(sceneId) {
+    currentScene = sceneId;
+    let sceneData = scenes[sceneId];
 
-    if (menuId) {
-        document.getElementById(menuId).style.display = 'flex';
+    // 1. Меняем фон
+    bgImage.src = sceneData.bgSrc;
+
+    // 2. Настраиваем NPC
+    if (sceneData.hasNpc) {
+        npc.worldX = sceneData.npcWorldX;
+        npc.worldY = sceneData.npcWorldY;
+        npc.name = sceneData.npcName;
+        npc.dialogueTree = sceneData.dialogueTree;
+        if (!entities.includes(npc)) entities.push(npc); // Добавляем в список отрисовки
+    } else {
+        entities = entities.filter(e => e !== npc); // Убираем NPC из списка
     }
-}
 
-document.getElementById('btn-start').addEventListener('click', () => {
-    gameState = "PLAYING";
-    showMenu(null); // Прячем все меню
-});
+    // 3. Сбрасываем позицию игрока
+    player.worldX = 0.5;
+    player.worldY = 0.5;
 
-document.getElementById('btn-resume').addEventListener('click', () => {
+    // 4. Пересчитываем и закрываем меню
+    updatePlayerPosition();
+    updateNpcPosition();
+    closeDialogue();
     gameState = "PLAYING";
     showMenu(null);
-});
+}
 
-document.getElementById('btn-to-main').addEventListener('click', () => {
-    gameState = "MENU";
-    showMenu('main-menu');
-});
+// ==========================================
+// ПОЗИЦИИ
+// ==========================================
+function updatePlayerPosition() {
+    let currentTopY = canvas.height * RATIO_FLOOR_TOP_Y;
+    let currentBottomY = canvas.height * RATIO_FLOOR_BOTTOM_Y;
+    let currentTopW = canvas.width * RATIO_FLOOR_TOP_W;
+    let currentBottomW = canvas.width * RATIO_FLOOR_BOTTOM_W;
 
-document.getElementById('btn-exit').addEventListener('click', () => {
-    // Если запущено в PyWebView, закрываем окно
-    if (window.pywebview && window.pywebview.api) {
-        window.pywebview.api.toggle_fullscreen(); // Или другая команда для выхода
-    }
-    window.close(); // Закрывает вкладку в браузере
+    player.screenY = currentTopY + (currentBottomY - currentTopY) * player.worldY;
+    let currentWidth = currentTopW + (currentBottomW - currentTopW) * player.worldY;
+    player.screenX = (canvas.width / 2) - (currentWidth / 2) + (currentWidth * player.worldX);
+    player.scale = 0.5 + (0.7 * player.worldY);
+}
+
+function updateNpcPosition() {
+    let currentTopY = canvas.height * RATIO_FLOOR_TOP_Y;
+    let currentBottomY = canvas.height * RATIO_FLOOR_BOTTOM_Y;
+    let currentTopW = canvas.width * RATIO_FLOOR_TOP_W;
+    let currentBottomW = canvas.width * RATIO_FLOOR_BOTTOM_W;
+
+    npc.screenY = currentTopY + (currentBottomY - currentTopY) * npc.worldY;
+    let currentWidth = currentTopW + (currentBottomW - currentTopW) * npc.worldY;
+    npc.screenX = (canvas.width / 2) - (currentWidth / 2) + (currentWidth * npc.worldX);
+    npc.scale = 0.5 + (0.7 * npc.worldY);
+}
+
+// ==========================================
+// ИНТЕРФЕЙС
+// ==========================================
+function showMenu(menuId) {
+    document.querySelectorAll('.ui-overlay').forEach(el => el.style.display = 'none');
+    if (menuId) document.getElementById(menuId).style.display = 'flex';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+
+    document.getElementById('btn-start').onclick = () => {
+        loadScene("midgard"); // При старте грузим Мидгард
+    };
+
+    document.getElementById('btn-exit').onclick = () => {
+        if (window.pywebview && window.pywebview.api) window.pywebview.api.close_window();
+        else window.close();
+    };
+
+    document.getElementById('btn-settings').onclick = () => showMenu('settings-menu');
+    document.getElementById('btn-back-settings').onclick = () => showMenu('main-menu');
+
+    document.getElementById('btn-fullscreen').onclick = () => {
+        if (window.pywebview && window.pywebview.api) window.pywebview.api.toggle_fullscreen();
+    };
+
+    const changeRes = (w, h) => {
+        canvas.width = w;
+        canvas.height = h;
+        ctx.imageSmoothingEnabled = false;
+        updatePlayerPosition();
+        updateNpcPosition();
+        if (window.pywebview && window.pywebview.api) {
+            window.pywebview.api.set_window_size(w, h);
+        }
+    };
+
+    document.getElementById('res-720').onclick = () => changeRes(1280, 720);
+    document.getElementById('res-1080').onclick = () => changeRes(1920, 1080);
+    document.getElementById('res-4k').onclick = () => changeRes(3840, 2160);
+
+    document.getElementById('btn-resume').onclick = () => { gameState = "PLAYING"; showMenu(null); };
+    document.getElementById('btn-to-main').onclick = () => { gameState = "MENU"; showMenu('main-menu'); };
+    document.getElementById('btn-open-map').onclick = () => { gameState = "MAP"; showMenu('map-overlay'); };
+
+    // КЛИКИ ПО КАРТЕ
+    document.getElementById('map-midgard').onclick = () => {
+        loadScene("midgard");
+    };
+
+    document.getElementById('map-asgard').onclick = () => {
+        loadScene("asgard");
+    };
 });
 
 // ==========================================
@@ -125,28 +195,32 @@ document.getElementById('btn-exit').addEventListener('click', () => {
 window.addEventListener('keydown', (e) => {
     keys[e.key.toLowerCase()] = true;
 
-    // Открытие/закрытие паузы на Esc
-    if (e.key === 'Escape' && gameState === "PLAYING") {
-        gameState = "PAUSED";
-        showMenu('pause-menu');
-    } else if (e.key === 'Escape' && gameState === "PAUSED") {
-        gameState = "PLAYING";
-        showMenu(null);
+    if (e.key === 'F11' || (e.altKey && e.key === 'Enter')) {
+        if (window.pywebview && window.pywebview.api) window.pywebview.api.toggle_fullscreen();
     }
 
-    // Взаимодействие (только если играем и диалог закрыт)
-    if ((e.key.toLowerCase() === 'e' || e.key.toLowerCase() === 'у') && gameState === "PLAYING" && !showDialogue) {
+    if (e.key.toLowerCase() === 'm' || e.key.toLowerCase() === 'ь') {
+        if (gameState === "PLAYING") { gameState = "MAP"; showMenu('map-overlay'); }
+        else if (gameState === "MAP") { gameState = "PLAYING"; showMenu(null); }
+    }
+
+    if (e.key === 'Escape') {
+        if (gameState === "PLAYING") { gameState = "PAUSED"; showMenu('pause-menu'); }
+        else if (gameState === "PAUSED") { gameState = "PLAYING"; showMenu(null); }
+        else if (gameState === "MAP") { gameState = "PLAYING"; showMenu(null); }
+    }
+
+    // Взаимодействие только если в сцене есть NPC
+    if ((e.key.toLowerCase() === 'e' || e.key.toLowerCase() === 'у') && gameState === "PLAYING" && !showDialogue && scenes[currentScene].hasNpc) {
         let dx = player.screenX - npc.screenX;
         let dy = player.screenY - npc.screenY;
-        if (Math.sqrt(dx*dx + dy*dy) < 200) {
-            openDialogue(npc);
-        }
+        if (Math.sqrt(dx*dx + dy*dy) < 200) openDialogue(npc);
     }
 });
 window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
 // ==========================================
-// ЛОГИКА ДИАЛОГОВ (Без изменений)
+// ДИАЛОГИ
 // ==========================================
 function openDialogue(npcObj) {
     showDialogue = true;
@@ -159,7 +233,6 @@ function renderDialogueNode(npcObj, nodeId) {
     let node = npcObj.dialogueTree[nodeId];
     document.getElementById('npc-name').textContent = npcObj.name;
     document.getElementById('npc-text').textContent = node.text;
-
     const choicesContainer = document.getElementById('dialogue-choices');
     choicesContainer.innerHTML = '';
 
@@ -182,12 +255,10 @@ function closeDialogue() {
 }
 
 // ==========================================
-// ЛОГИКА ДВИЖЕНИЯ (Без изменений)
+// ДВИЖЕНИЕ И ОТРИСОВКА
 // ==========================================
 function updatePlayer() {
-    // Если диалог открыт — не двигаемся
     if (showDialogue) return;
-
     let dx = 0, dy = 0, isMoving = false;
 
     if (keys['w'] || keys['arrowup'] || keys['ц']) { dy -= 1; }
@@ -214,46 +285,32 @@ function updatePlayer() {
 
     if (isMoving) {
         player.animTimer++;
-        if (player.animTimer > 10) {
-            player.frame = (player.frame + 1) % 3;
-            player.animTimer = 0;
-        }
-    } else {
-        player.frame = 1;
-    }
+        if (player.animTimer > 10) { player.frame = (player.frame + 1) % 3; player.animTimer = 0; }
+    } else { player.frame = 1; }
     updatePlayerPosition();
 }
 
-// ==========================================
-// ОТРИСОВКА (Render)
-// ==========================================
 function draw() {
     if (bgImage.complete && bgImage.naturalWidth > 0) {
         ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
     } else {
-        ctx.fillStyle = colors.bg;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = colors.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    updateNpcPosition();
+    if (scenes[currentScene].hasNpc) updateNpcPosition();
+
     entities.sort((a, b) => a.screenY - b.screenY);
 
     for (let entity of entities) {
-        if (entity === npc) {
-            let nw = npc.w * npc.scale;
-            let nh = npc.h * npc.scale;
-            ctx.fillStyle = npc.color;
-            ctx.fillRect(npc.screenX - nw/2, npc.screenY - nh, nw, nh);
-
-            let dx = player.screenX - npc.screenX;
-            let dy = player.screenY - npc.screenY;
+        if (entity === npc && scenes[currentScene].hasNpc) {
+            let nw = npc.w * npc.scale; let nh = npc.h * npc.scale;
+            ctx.fillStyle = npc.color; ctx.fillRect(npc.screenX - nw/2, npc.screenY - nh, nw, nh);
+            let dx = player.screenX - npc.screenX; let dy = player.screenY - npc.screenY;
             if (Math.sqrt(dx*dx + dy*dy) < 200 && !showDialogue) {
-                ctx.fillStyle = '#fff';
-                ctx.font = `bold ${30 * npc.scale}px Arial`;
+                ctx.fillStyle = '#fff'; ctx.font = `bold ${30 * npc.scale}px Arial`;
                 ctx.fillText('!', npc.screenX - 5, npc.screenY - nh - 20);
             }
         }
-
         if (entity === player) {
             if (heroImage.complete && heroImage.naturalWidth > 0) {
                 let frameWidth = Math.floor(147 / 3);
@@ -262,34 +319,21 @@ function draw() {
                 if (player.direction === 'left') row = 1;
                 if (player.direction === 'right') row = 2;
                 if (player.direction === 'up') row = 3;
-
                 let sx = Math.floor(player.frame * frameWidth);
                 let sy = Math.floor(row * frameHeight);
-                let drawW = 192 * player.scale;
-                let drawH = 192 * player.scale;
-
-                ctx.drawImage(heroImage, sx, sy, frameWidth, frameHeight,
-                    player.screenX - drawW/2, player.screenY - drawH, drawW, drawH);
+                let drawW = 192 * player.scale; let drawH = 192 * player.scale;
+                ctx.drawImage(heroImage, sx, sy, frameWidth, frameHeight, player.screenX - drawW/2, player.screenY - drawH, drawW, drawH);
             }
         }
     }
 }
 
-// ==========================================
-// ИГРОВОЙ ЦИКЛ (С проверкой состояния)
-// ==========================================
 function gameLoop() {
-    // Обновляем игру ТОЛЬКО если мы играем (не в меню и не на паузе)
-    if (gameState === "PLAYING") {
-        updatePlayer();
-    }
-
-    // Рисуем мир ВСЕГДА (чтобы на фоне меню была видна игра)
+    if (gameState === "PLAYING") updatePlayer();
     draw();
-
     requestAnimationFrame(gameLoop);
 }
 
-// Старт
-updatePlayerPosition();
+// Инициализация (загружаем первую сцену при запуске)
+loadScene("midgard");
 gameLoop();

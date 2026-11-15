@@ -7,12 +7,9 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="game-container">
-        <!-- Игровое поле -->
         <canvas id="gameCanvas"></canvas>
 
-        <!-- Окно диалога -->
         <div id="dialogue-box">
             <div class="portrait-placeholder"></div>
             <div class="text-content">
@@ -21,25 +18,44 @@
             </div>
         </div>
 
-        <!-- Кнопки выбора в диалоге -->
         <div id="dialogue-choices"></div>
 
-        <!-- ГЛАВНОЕ МЕНЮ -->
         <div id="main-menu" class="ui-overlay">
             <h1 class="game-title">DIVINE WORLD</h1>
             <div class="menu-buttons">
                 <button id="btn-start">Начать путь</button>
+                <button id="btn-settings">Настройки</button>
                 <button id="btn-exit">Выйти</button>
             </div>
         </div>
 
-        <!-- МЕНЮ ПАУЗЫ -->
+        <div id="settings-menu" class="ui-overlay" style="display: none;">
+            <h2 class="menu-title">НАСТРОЙКИ</h2>
+            <div class="menu-buttons">
+                <button id="btn-fullscreen" style="border-color: #66ccff; color: #66ccff;">Сменить режим экрана (F11)</button>
+                <button id="res-720">HD (720p)</button>
+                <button id="res-1080">Full HD (1080p)</button>
+                <button id="res-4k">4K Ultra HD</button>
+                <button id="btn-back-settings" style="margin-top: 30px; border-color: #ff4444;">Назад</button>
+            </div>
+        </div>
+
         <div id="pause-menu" class="ui-overlay" style="display: none;">
             <h2 class="menu-title">ПАУЗА</h2>
             <div class="menu-buttons">
                 <button id="btn-resume">Продолжить</button>
+                <button id="btn-open-map">Открыть карту (M)</button>
                 <button id="btn-to-main">В главное меню</button>
             </div>
+        </div>
+
+        <div id="map-overlay" class="ui-overlay" style="display: none; background: rgba(0,0,0,0.95);">
+            <div class="map-container">
+                <img src="assets/maptry.png" alt="Карта миров" class="map-image">
+                <button id="map-midgard" class="map-hitbox" title="Мидгард"></button>
+                 <button id="map-asgard" class="map-hitbox-asgard" title="Асгард"></button>
+            </div>
+            <p style="color: #fff; margin-top: 20px; font-family: sans-serif;">Нажмите на Мидгард, чтобы переместиться. (M или Esc - закрыть)</p>
         </div>
     </div>
 

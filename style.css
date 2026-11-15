@@ -1,203 +1,111 @@
 @font-face {
-    font-family: 'JakobC';
-    src: local('JakobC');
+    font-family: 'MyFont';
+    src: url('assets/font.ttf'); /* Убедись, что файл лежит в папке assets и называется font.ttf */
 }
 
-/* =========================================
-   ОБЩИЕ НАСТРОЙКИ
-   ========================================= */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-}
-
-/* Применяем шрифт ко всей игре */
-body, #npc-name, #npc-text, .choice-btn {
-    font-family: 'JakobC', sans-serif !important;
+    font-family: 'MyFont', sans-serif !important;
 }
 
 body {
     background: #000;
-    display: flex;
-    /* ... и так далее твой код ... */
-
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        background: #000; /* Черный фон вокруг игры */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
-        font-family: sans-serif;
-    }
-
-    /* Контейнер теперь на весь экран */
-
-    .game-container {
-        position: relative;
-        width: 1920px;
-        height: 1080px;
-        /* Если экран меньше 1920, он пропорционально уменьшит картинку */
-        max-width: 100vw;
-        max-height: 100vh;
-        aspect-ratio: 16 / 9;
-    }
-
-    canvas {
-        width: 100%;
-        height: 100%;
-        display: block;
-        image-rendering: pixelated;
-    }
-
-    /* =========================================
-       ГЛАВНОЕ ОКНО ДИАЛОГА
-       ========================================= */
-
-    #dialogue-box {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 300px;
-        background: rgba(0, 0, 0, 0.85);
-        display: none;
-        padding: 40px 40px 40px 300px;
-        color: #fff;
-    }
-
-    .portrait-placeholder {
-        position: absolute;
-        left: 40px;
-        bottom: 30px;
-        width: 220px;
-        height: 220px;
-    }
-
-    .text-content {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        justify-content: center;
-    }
-
-    #npc-name {
-        color: #ccc;
-        font-weight: bold;
-        font-size: 28px;
-        margin-bottom: 15px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-
-    #npc-text {
-        font-size: 26px;
-        line-height: 1.5;
-        color: #eee;
-        font-family: sans-serif;
-    }
-
-    /* =========================================
-       КНОПКИ ВЫБОРА
-       ========================================= */
-
-    #dialogue-choices {
-        position: absolute;
-        bottom: 320px;
-        right: 0;
-        flex-direction: column;
-        gap: 10px;
-        width: 600px;
-        display: none;
-    }
-
-    .choice-btn {
-        background: rgba(0, 0, 0, 0.85);
-        border: none;
-        color: #fff;
-        padding: 20px 30px;
-        text-align: center;
-        font-size: 22px;
-        font-family: sans-serif;
-        cursor: pointer;
-        transition: background 0.2s ease, padding-left 0.2s ease;
-    }
-
-    .choice-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        padding-left: 40px; /* Текст сдвигается при наведении */
-    }
+    overflow: hidden;
 }
 
-/* Оставляем все твои старые стили для диалогов и canvas, а в самый конец добавляем: */
+.game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Холст всегда вписывается в окно (сохраняя 16:9) */
+canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
 
 /* =========================================
-   ОБЩИЕ СТИЛИ ДЛЯ ВСПЛЫВАЮЩИХ МЕНЮ (Overlay)
+   МЕНЮ
    ========================================= */
 .ui-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85); /* Темный полупрозрачный фон */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 10; /* Меню всегда поверх игры */
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 10;
 }
 
-/* Заголовок игры */
-.game-title {
-    font-size: 80px;
-    color: #fff;
-    letter-spacing: 5px;
-    margin-bottom: 50px;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-    font-family: 'JacobC', sans-serif !important;
-}
+.game-title { font-size: 80px; color: #fff; letter-spacing: 5px; margin-bottom: 50px; }
+.menu-title { font-size: 50px; color: #fff; margin-bottom: 40px; }
+.menu-buttons { display: flex; flex-direction: column; gap: 15px; width: 400px; }
 
-.menu-title {
-    font-size: 50px;
-    color: #fff;
-    margin-bottom: 40px;
-    letter-spacing: 3px;
-    font-family: 'JacobC', sans-serif !important;
-}
-
-/* Контейнер для кнопок меню */
-.menu-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 400px;
-}
-
-/* Кнопки в меню */
 .menu-buttons button {
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    padding: 20px;
-    font-size: 24px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-family: 'JacobC', sans-serif !important;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+    color: #fff; padding: 20px; font-size: 24px;
+    cursor: pointer; transition: all 0.3s ease;
 }
-
 .menu-buttons button:hover {
     background: rgba(255, 255, 255, 0.15);
-    border-color: #fff;
-    transform: scale(1.05); /* Кнопка чуть увеличивается */
+    transform: scale(1.05);
+}
+
+/* =========================================
+   ДИАЛОГИ И КАРТА
+   ========================================= */
+#dialogue-box {
+    position: absolute; bottom: 0; left: 0;
+    width: 100%; height: 300px;
+    background: rgba(0, 0, 0, 0.85); display: none;
+    padding: 40px; padding-left: 300px; color: #fff; z-index: 5;
+}
+#npc-name { color: #ccc; font-size: 28px; margin-bottom: 15px; }
+#npc-text { font-size: 26px; color: #eee; }
+
+#dialogue-choices {
+    position: absolute; bottom: 320px; right: 0;
+    flex-direction: column; gap: 10px; width: 600px;
+    display: none; z-index: 6;
+}
+.choice-btn {
+    background: rgba(0, 0, 0, 0.85); border: none; color: #fff;
+    padding: 20px 30px; font-size: 22px; cursor: pointer;
+}
+.choice-btn:hover { background: rgba(255, 255, 255, 0.2); padding-left: 40px; }
+
+.map-container { position: relative; display: inline-block; max-width: 90vw; max-height: 80vh; }
+.map-image { max-width: 90vw; max-height: 80vh; display: block; border: 4px solid #333; }
+.map-hitbox {
+    position: absolute; left: 22%; top: 30%; width: 25%; height: 20%;
+    background: transparent; border: 2px solid transparent; cursor: pointer;
+}
+.map-hitbox:hover { background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; }
+/* Кнопка Асгарда на карте */
+.map-hitbox-asgard {
+    position: absolute;
+    left: 45%;    /* Примерное положение по горизонтали */
+    top: 5%;      /* Примерное положение по вертикали */
+    width: 20%;   /* Ширина зоны клика */
+    height: 15%;  /* Высота зоны клика */
+    background: transparent;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.map-hitbox-asgard:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
 }
