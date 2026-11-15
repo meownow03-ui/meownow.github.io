@@ -58,8 +58,8 @@ const bgImage = new Image(); // Сюда будет грузиться фон т
 // АДАПТИВНАЯ МАТЕМАТИКА
 // ==========================================
 const RATIO_FLOOR_TOP_Y = 500 / 1080;
-const RATIO_FLOOR_BOTTOM_Y = 1040 / 1080;
-const RATIO_FLOOR_TOP_W = 1440 / 1920;
+const RATIO_FLOOR_BOTTOM_Y = 1115 / 1080;
+const RATIO_FLOOR_TOP_W = 1360 / 1730;
 const RATIO_FLOOR_BOTTOM_W = 1.0;
 
 const player = {
