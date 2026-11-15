@@ -1,6 +1,6 @@
 @font-face {
     font-family: 'MyFont';
-    src: url('assets/font.ttf'); /* Убедись, что файл лежит в папке assets и называется font.ttf */
+    src: url('assets/font_fixed.woff2') format('woff2');
 }
 
 * {
@@ -8,6 +8,7 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'MyFont', sans-serif !important;
+    font-size: 48px;
 }
 
 body {
@@ -46,8 +47,8 @@ canvas {
     z-index: 10;
 }
 
-.game-title { font-size: 80px; color: #fff; letter-spacing: 5px; margin-bottom: 50px; }
-.menu-title { font-size: 50px; color: #fff; margin-bottom: 40px; }
+.game-title { font-size: 120px; color: #fff; letter-spacing: 5px; margin-bottom: 50px; }
+.menu-title { font-size: 80px; color: #fff; margin-bottom: 40px; }
 .menu-buttons { display: flex; flex-direction: column; gap: 15px; width: 400px; }
 
 .menu-buttons button {
